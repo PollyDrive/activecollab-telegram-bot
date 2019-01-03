@@ -1,15 +1,41 @@
+require('dotenv').config()
+// const getIntent = require('./api.js')
+const api = require('./api.js')
 const Telegraf = require('telegraf')
 
-const BOT_TOKEN = '746952239:AAHabzbXa1aje-n1L_tzxkUp3TjsZVfbmGA';
+let intent = ''
+let token = ''
 
-const bot = new Telegraf(BOT_TOKEN)
+const bot = new Telegraf(process.env.BOT_TOKEN)
 bot.start((ctx) => ctx.reply('Welcome'))
 bot.help((ctx) => ctx.reply('Send me a sticker'))
 bot.on('sticker', (ctx) => ctx.reply('👍'))
-bot.hears('hi', (ctx) => ctx.reply('Hey there'))
-bot.startPolling()
+bot.hears('hi', (ctx) => {
+  console.log('send request to collab')
+  ctx.reply('Hey there')
+})
 
-// const bot = new Telegraf(BOT_TOKEN)
+bot.command('api', (ctx) => {
+  ctx.reply('Api')
+  api.getIntent()
+})
+
+bot.command('projects', (ctx) => {
+  ctx.reply('projects')
+  api.getProjects()
+})
+
+// console.log(process.env.BOT_TOKEN)
+
+
+// bot.use((ctx) => {
+//   console.log(ctx.telegram)
+//   console.log(ctx.chat)
+// })
+
+
+
+
 
 // bot.use((ctx, next) => {
 //   const start = new Date()
@@ -19,5 +45,6 @@ bot.startPolling()
 //   })
 // })
 
-// bot.on('text', (ctx) => ctx.reply('Hello World'))
-// bot.startPolling()
+bot.on('text', (ctx) => ctx.reply('Hello World'))
+
+bot.startPolling()

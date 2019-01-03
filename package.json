@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/PollyDrive/activecollab-telegram-bot#readme",
   "dependencies": {
+    "dotenv": "^6.2.0",
+    "request": "^2.88.0",
     "telegraf": "^3.25.5"
   }
 }

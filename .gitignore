@@ -2,6 +2,7 @@ node_modules
 dev
 build
 
+
 api-config.js
 
 .DS_Store
@@ -9,7 +10,7 @@ api-config.js
 
 .tmpTemplater
 .tmpPreproc
-
+.env
 .idea
 .vscode
 *.sublime-project
