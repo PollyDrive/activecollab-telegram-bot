@@ -3,8 +3,8 @@ require('dotenv').config()
 const api = require('./api.js')
 const Telegraf = require('telegraf')
 
-let intent = ''
-let token = ''
+let lastCommand = []
+
 
 const bot = new Telegraf(process.env.BOT_TOKEN)
 bot.start((ctx) => ctx.reply('Welcome'))
@@ -15,36 +15,46 @@ bot.hears('hi', (ctx) => {
   ctx.reply('Hey there')
 })
 
+
+api.checkToken()
+
 bot.command('api', (ctx) => {
-  ctx.reply('Api')
   api.getIntent()
 })
 
 bot.command('projects', (ctx) => {
-  ctx.reply('projects')
-  api.getProjects()
+  
+  api.getProjects().then(function (filteredMsg) {
+
+    ctx.reply(filteredMsg)
+  }).catch(function (e) {
+
+  })
+
 })
 
-// console.log(process.env.BOT_TOKEN)
 
-
-// bot.use((ctx) => {
-//   console.log(ctx.telegram)
-//   console.log(ctx.chat)
-// })
-
+bot.command('tasks', (ctx) => {
+  lastCommand[ctx.message.from.id] = 'tasks'
+  ctx.reply('Введи id проекта')
+})
 
 
 
+bot.on('text', (ctx) => {
+  if (lastCommand[ctx.message.from.id] === 'tasks') {
 
-// bot.use((ctx, next) => {
-//   const start = new Date()
-//   return next(ctx).then(() => {
-//     const ms = new Date() - start
-//     console.log('Response time %sms', ms)
-//   })
-// })
+    ctx.reply(`Ща будут таски по проекту ${ctx.message.text}`)
+    api.getTasks(ctx.message.text).then(function (taskArr) {
+      // console.log(taskArr)
+      ctx.reply(taskArr)
+    }).catch(function (e) {
+    })
 
-bot.on('text', (ctx) => ctx.reply('Hello World'))
+
+  } else { 
+    ctx.reply('Давай еще раз')
+  }
+})
 
 bot.startPolling()
