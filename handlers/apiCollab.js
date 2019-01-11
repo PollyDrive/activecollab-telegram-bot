@@ -39,13 +39,13 @@ function checkToken(res) {
 }
 
 
-
 function getIntent() {
   isTokenRequest = true
   req('post', process.env.API_URL_LOGIN, {
     email: 'arslan-cs@ya.ru',
     password: 'arslan5424'
   }).then(function (body) {
+    // console.log(body)
     getToken(body)
     
   }).catch(function (err) {
@@ -60,8 +60,8 @@ function getToken(body) {
     client_name: 'penkman',
     client_vendor: 'telegram_bot',
   }).then(function (res) {
+    // console.log(res.token)
     token = res.token
-    console.log(res.token)
   }).catch(function (err) {
     console.log(err)
   })
@@ -70,12 +70,20 @@ function getToken(body) {
 function getProjects() {
   return new Promise(function (resolve, reject) {
     req('get', process.env.API_URL + '/projects').then(function (res) {
-      let filteredMsg = ''
+      // let filteredMsg = ''
+      let filteredArr = []
 
       res.forEach((item, index) => {
-        filteredMsg += '\nid: ' + item.id + ' ' + 'name: ' + item.name
+        
+        // filteredMsg = "id:" + item.id + "name: " + item.name
+        // console.log(filteredMsg)
+        filteredArr.push({
+          id: item.id,
+          name: item.name
+        })
       })
-      resolve(filteredMsg)
+      
+      resolve(filteredArr)
 
     }).catch(function (err) {
       reject(err)
@@ -86,18 +94,37 @@ function getProjects() {
 // получить список листов /task-lists or /task-lists/{id}
 // получить список тасков /tasks or /tasks/{id}
 
-function getTasks(id) {
+function getTasks(projectID) {
   return new Promise(function (resolve, reject) {
-    req('get', `${process.env.API_URL}/projects/${id}/tasks`).then(function (res) {
+    req('get', `${process.env.API_URL}/projects/${projectID}/tasks`).then(function (res) {
 
       let taskArr = []
       
       res.tasks.forEach((item, index) => {
-        console.log(item)
-        taskArr.push(item.name)
+        // console.log(item)
+        taskArr.push(item)
       })
 
       resolve(taskArr)
+
+    }).catch(function (err) {
+      reject(err)
+    })
+  })
+}
+
+
+function timeRecord(projectID, taskID) {
+  return new Promise(function (resolve, reject) {
+    req('post', `${process.env.API_URL}/projects/${projectID}/time-records`, {
+      task_id: taskID,
+      value: "2:30",
+      user_id: 1,
+      job_type_id: 1,
+      record_date: "2014-05-14"
+    }).then(function (res) {
+
+      resolve(res)
 
     }).catch(function (err) {
       reject(err)
@@ -111,5 +138,6 @@ module.exports = {
   getIntent,
   getProjects,
   checkToken,
-  getTasks
+  getTasks,
+  timeRecord
 } 
