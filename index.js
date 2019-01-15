@@ -47,8 +47,16 @@ app.get('/auth', function (req, res) {
 
 app.get('/callback', function (req, res) {
   res.send(req.query.code);
-  console.log(res)
+  console.log(req.query.code)
+  
+  apiTeamweek.getToken(req.query.code).then(function (res) {
+    console.log(res)
+  }).catch(function (err) {
+    console.log(err)
+  })
 });
+
+
 
 app.listen(3000, function () {
   console.log('app listening on port 3000!');

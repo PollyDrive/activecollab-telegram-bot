@@ -1,8 +1,12 @@
 //
+
+const request = require('request');
+
+
 const credentials = {
   client: {
-    id: '1765595154eefd03ffda',
-    secret: '54aff154e053fea9857d2673282b7ccdb42f6b9f'
+    id: '310138d23f7b2108672b',
+    secret: 'a7bc9abb82a3f62d3f8276ebfd38da803df37962'
   },
   auth: {
     tokenHost: 'https://teamweek.com/',
@@ -11,6 +15,31 @@ const credentials = {
     authorizePath: 'authenticate/token'
   }
 };
+
+function req(method, someUrl, body) {
+
+  const base64 = new Buffer.from(credentials.client.id + ':' + credentials.client.secret).toString('base64')
+  console.log('base64: ' + 'Basic' + base64)
+
+  return new Promise(function (resolve, reject) {
+
+    request[method](someUrl, {
+      json: true,
+      body: body,
+      headers: {
+        'Authorization': 'Basic' + base64 
+      }
+    }, function (err, res) {
+
+      if (err) return reject(err);
+      
+      resolve(res.body);
+
+    })
+
+  })
+
+}
 
 
 function generateAuthUri() {
@@ -23,20 +52,24 @@ function generateAuthUri() {
   //   state: 'asdasd1323123dasdasd'
   // });
 
-  
-
   const authorizationUri = 'https://teamweek.com/oauth/login?response_type=code&client_id=' + credentials.client.id + '&redirect_uri=http://localhost:3000/callback'
-
   return authorizationUri;
 
 }
 
-// Get the access token object (the authorization code is given from the previous step).
-// const tokenConfig = {
-//   code: '<code>',
-//   redirect_uri: 'http://localhost:3000/callback',
-//   scope: '<scope>', // also can be an array of multiple scopes, ex. ['<scope1>, '<scope2>', '...']
-// };
+function getToken(authCode) {
+  return new Promise(function (resolve, reject) {
+    req('post', 'https://teamweek.com/api/v4/authenticate/token', {
+      grant_type: 'authorization_code',
+      code: authCode,
+      client_id: credentials.client.id
+    }).then(function (res) {
+      resolve(res)
+    }).catch(function (e) {
+      //
+    })
+  })
+}
 
 // Save the access token
 // try {
@@ -63,5 +96,6 @@ function generateAuthUri() {
 // }
 
 module.exports = {
-  generateAuthUri
+  generateAuthUri,
+  getToken
 }
