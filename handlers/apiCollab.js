@@ -34,7 +34,7 @@ function req(method, someUrl, body) {
 function checkToken(res) {
   if ((res && res.body && res.body.message && res.body.message === 'Authorization token is not valid') || token === '') {
     getIntent()
-    console.log('получаем новый токен')
+    console.log('get collab token')
   }
 }
 
@@ -42,8 +42,8 @@ function checkToken(res) {
 function getIntent() {
   isTokenRequest = true
   req('post', process.env.API_URL_LOGIN, {
-    email: 'arslan-cs@ya.ru',
-    password: 'arslan5424'
+    email: 'ak@pink-man.ru',
+    password: 'pinkmanfront'
   }).then(function (body) {
     // console.log(body)
     getToken(body)
@@ -60,7 +60,8 @@ function getToken(body) {
     client_name: 'penkman',
     client_vendor: 'telegram_bot',
   }).then(function (res) {
-    // console.log(res.token)
+
+    console.log('collab token is: ' + res.token)
     token = res.token
   }).catch(function (err) {
     console.log(err)
@@ -72,11 +73,11 @@ function getProjects() {
     req('get', process.env.API_URL + '/projects').then(function (res) {
       // let filteredMsg = ''
       let filteredArr = []
+      // console.log(res)
 
       res.forEach((item, index) => {
         
         // filteredMsg = "id:" + item.id + "name: " + item.name
-        // console.log(filteredMsg)
         filteredArr.push({
           id: item.id,
           name: item.name
@@ -121,7 +122,8 @@ function timeRecord(projectID, taskID) {
       value: "2:30",
       user_id: 1,
       job_type_id: 1,
-      record_date: "2014-05-14"
+      record_date: "2019-01-14",
+      billable_status: 1
     }).then(function (res) {
 
       resolve(res)

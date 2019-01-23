@@ -1,66 +1,71 @@
+
 require('dotenv').config()
-// const getIntent = require('./apiCollab.js')
+const server = require('./server.js')
 const apiCollab = require('./handlers/apiCollab.js')
 const apiTeamweek = require('./handlers/apiTeamweek.js')
 const Telegraf = require('telegraf')
 const Markup = require('telegraf/markup')
-
+const TelegrafInlineMenu = require('telegraf-inline-menu')
 
 // let lastCommand = []
 
 
-const bot = new Telegraf(process.env.BOT_TOKEN)
 
-
-/********[WELCOME]*******/
-bot.start((ctx) => ctx.reply('Welcome'))
-
-/********[INIT HELP]*******/
-bot.help((ctx) => ctx.reply('тут будет хэлба'))
+/********[START EXPRESS]*******/
+server();
 
 /********[INIT TOKEN COLLAB]*******/
-apiCollab.checkToken(app)
+apiCollab.checkToken()
 
+const menu = new TelegrafInlineMenu(
+  ctx => `Hey ${ctx.from.first_name}!`
+)
+menu.simpleButton('I am excited!', 'a', {
+  doFunc: ctx => ctx.reply('As am I!')
+})
 
-/********[INIT TOKEN TEAM WEAK]*******/
-// apiTeamweek.firstStep()
-
+menu.setCommand('start')
+  
 /********[INIT PROJECTS]*******/
+
 // bot.command('projects', (ctx) => {
 //   // projectsController()
-
-
-//   // ЕБОШЬ
-
 // })
 
+/********[INIT TASKS]*******/
 
-var express = require('express');
-var app = express();
+/********[INIT TIME RECORDS]*******/
 
+/********[INIT SETTINGS]*******/
 
+/********[RUNTIME]*******/
+    
+const bot = new Telegraf(process.env.BOT_TOKEN)
 
-app.get('/auth', function (req, res) {
-  const redirectURI = apiTeamweek.generateAuthUri()
-  res.redirect(redirectURI);
-});
+bot.command('user', (ctx) => { 
+  apiTeamweek.getUser().then(function (res) {
+    // console.log(res);
+    ctx.reply(`Hello, ${res.name}! \n your id: ${res.userID} `)
+    apiTeamweek.getTaskList(res.workspaceID).then(function (resArr) {
+      console.log(resArr);
+      // ctx.reply(resArr);
+      ctx.reply('Вот твои таски', Markup
+        .keyboard(resArr)
+        .oneTime()
+        .resize()
+        .extra()
+      )
+      
 
-app.get('/callback', function (req, res) {
-  res.send(req.query.code);
-  console.log(req.query.code)
-  
-  apiTeamweek.getToken(req.query.code).then(function (res) {
-    console.log(res)
+    }).catch(function (e) {
+      console.log(e);
+    })
+
   }).catch(function (err) {
-    console.log(err)
+    console.log(err);
   })
-});
+})
 
-
-
-app.listen(3000, function () {
-  console.log('app listening on port 3000!');
-});
 
 
 bot.command('projects', (ctx) => {
@@ -71,6 +76,11 @@ bot.command('projects', (ctx) => {
     filteredMsg.forEach((item) => {
       keyboardArray.push(item.name);
     });
+
+    ctx.reply('Твои проекты', Markup
+      .inlineKeyboard([keyboardArray])
+    )
+    console.log(keyboardArray)
 
     ctx.reply('Твои проекты', Markup
       .keyboard(keyboardArray)
@@ -112,10 +122,9 @@ bot.command('projects', (ctx) => {
 
 
           apiCollab.timeRecord(1, 1).then(function (res) {
-              // console.log(res)
-            
+            console.log(res)
           }).catch(function (e) {
-
+            console.log(e)
           })
 
         } else {
@@ -129,49 +138,11 @@ bot.command('projects', (ctx) => {
   })
 })
 
-/********[INIT TASKS]*******/
-// bot.command('tasks', (ctx) => {
-//   lastCommand[ctx.message.from.id] = 'tasks'
-//   ctx.reply('Введи id проекта')
+// menu.simpleButton('I am excited!', 'a', {
+//   doFunc: ctx => ctx.reply('As am I!')
 // })
-
-
-/********[INIT TIME RECORDS]*******/
-
-
-/********[INIT SETTINGS]*******/
-
-
-/********[RUNTIME]*******/
-
-
-
-
-// bot.on('text', (ctx) => {
-//   if (lastCommand[ctx.message.from.id] === 'tasks') {
-//     ctx.reply(`Ищу таски по проекту ${ctx.message.text}`)
-//     apiCollab.getTasks(ctx.message.text).then(function (taskArr) {
-//       // console.log(taskArr)
-//       if (taskArr.length) {
-//         ctx.reply('Вот твои таски', Markup
-//           .keyboard(
-//             [taskArr]
-//             )
-//             .oneTime()
-//             .resize()
-//             .extra()
-//           )
-//       } else { 
-//         ctx.reply('Тасков нет')
-//       }
-//     }).catch(function (e) {
-//     })
-
-//   } else { 
-//     ctx.reply('Давай еще раз')
-//   }
-// })
-
+// menu.setCommand('olo')
+// bot.use(main.init())
 
 
 

@@ -1,6 +1,8 @@
 //
 
 const request = require('request');
+let access_token = 'IYLVeHpYx52JkiZKeUw5l7wqoxDww6hOE4NJJoSZ3A-E1sNarYEhxBeOPPg4F4hYBHN2G8l7knt_x1f4TTtBT0n2PojzoCDudmxWhRZuksnDygiw1snVN_xRiaGWBdgRKGzmASlmWtSL9R4c6BNVAR4GkcCU4cDDxioRfgQkHV6J6nYhyGpP6wsuLAbr6f34Bk5kuOPpXpRlk48DBqVons95srs2bVgSKGlWNfRjISsnO6RpTG-PbcRCQ2Fc3R1P4IUO-dZEMVyzl7LRG2v6x_adh7YEMC0S3h-TLA-j7CO-WPNJT0iwLLRVZ_taGI-E5egXp4Ovtu5LEwsRwTLOrQ==';
+let refresh_token = '';
 
 
 const credentials = {
@@ -18,22 +20,22 @@ const credentials = {
 
 function req(method, someUrl, body) {
 
-  const base64 = new Buffer.from(credentials.client.id + ':' + credentials.client.secret).toString('base64')
-  console.log('base64: ' + 'Basic' + base64)
+  const base64 = 'Basic ' + new Buffer.from(credentials.client.id + ':' + credentials.client.secret).toString('base64')
+  const fullAccessToken = 'Bearer ' + access_token
 
   return new Promise(function (resolve, reject) {
 
     request[method](someUrl, {
-      json: true,
-      body: body,
+      // json: true,
+      form: body,
       headers: {
-        'Authorization': 'Basic' + base64 
+        'Authorization': access_token ? fullAccessToken : base64
       }
     }, function (err, res) {
 
       if (err) return reject(err);
-      
-      resolve(res.body);
+      const parsedBody = JSON.parse(res.body);
+      resolve(parsedBody);
 
     })
 
@@ -44,14 +46,6 @@ function req(method, someUrl, body) {
 
 function generateAuthUri() {
 
-  // const oauth2 = require('simple-oauth2').create(credentials);
-
-  // const authorizationUri = oauth2.authorizationCode.authorizeURL({
-  //   redirect_uri: 'http://pinkman.ru/',
-  //   // scope: 'scope', // also can be an array of multiple scopes, ex. ['<scope1>, '<scope2>', '...']
-  //   state: 'asdasd1323123dasdasd'
-  // });
-
   const authorizationUri = 'https://teamweek.com/oauth/login?response_type=code&client_id=' + credentials.client.id + '&redirect_uri=http://localhost:3000/callback'
   return authorizationUri;
 
@@ -59,17 +53,65 @@ function generateAuthUri() {
 
 function getToken(authCode) {
   return new Promise(function (resolve, reject) {
-    req('post', 'https://teamweek.com/api/v4/authenticate/token', {
+    req('post', 'https://teamweek.com/api/v3/authenticate/token.json', {
       grant_type: 'authorization_code',
       code: authCode,
       client_id: credentials.client.id
     }).then(function (res) {
+      access_token = res.access_token
+      refresh_token = res.refresh_token
+      console.log(res)
       resolve(res)
     }).catch(function (e) {
-      //
+      reject(e)
     })
   })
 }
+
+
+function getUser() {
+  return new Promise(function (resolve, reject) {
+    req('get', `https://teamweek.com/api/v4/me`).then(function (res) {
+      const UserData = {
+        name: res.name,
+        workspace: res.workspaces[0].name,
+        workspaceID: res.workspaces[0].id,
+        userID: res.id
+      }
+      resolve(UserData)
+
+    }).catch(function (err) {
+      reject(err)
+    })
+  })
+}
+
+function getTaskList(workspaceID) {
+  return new Promise(function (resolve, reject) {
+    req('get', `https://teamweek.com/api/v4/${workspaceID}/tasks`).then(function (res) {
+      let taskArr = [];
+      res.forEach((item) => {
+        const task = {
+          userID: item.user_id,
+          projectName: item.name,
+          projectID: item.id,
+          startDate: item.start_date,
+          endDate: item.end_date,
+          estimated: item.estimated_minutes,
+          isDone: item.done
+        }
+        taskArr.push(task);
+      })
+      // console.log(taskArr);
+      resolve(taskArr)
+
+    }).catch(function (err) {
+      reject(err)
+    })
+  })
+}
+
+
 
 // Save the access token
 // try {
@@ -97,5 +139,7 @@ function getToken(authCode) {
 
 module.exports = {
   generateAuthUri,
-  getToken
+  getToken,
+  getUser,
+  getTaskList
 }
