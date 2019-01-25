@@ -2,9 +2,9 @@ let token = ''
 let isTokenRequest = false
 const request = require('request');
 
+let count = 0;
 
 function req(method, someUrl, body) {
-
   return new Promise(function (resolve, reject) {
 
     request[method](someUrl, {
@@ -17,12 +17,14 @@ function req(method, someUrl, body) {
         
         if (!isTokenRequest) {
           checkToken(res)
+          
         } else {
           isTokenRequest = false
         }
 
         if (err) return reject(err);
-        console.log('******* start responce **********')
+        count++
+        console.log(`******* responce № ${count} **********`)
         resolve(res.body);
         
     })
@@ -42,10 +44,10 @@ function checkToken(res) {
 function getIntent() {
   isTokenRequest = true
   req('post', process.env.API_URL_LOGIN, {
-    email: 'ak@pink-man.ru',
+    email: 'pollydrive42@gmail.com',
     password: 'pinkmanfront'
   }).then(function (body) {
-    // console.log(body)
+    // console.log('user.intent is: ' + body.user.intent)
     getToken(body)
     
   }).catch(function (err) {
@@ -76,8 +78,6 @@ function getProjects() {
       // console.log(res)
 
       res.forEach((item, index) => {
-        
-        // filteredMsg = "id:" + item.id + "name: " + item.name
         filteredArr.push({
           id: item.id,
           name: item.name
