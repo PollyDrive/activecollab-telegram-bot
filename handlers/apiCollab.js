@@ -92,8 +92,27 @@ function getProjects() {
   })
 }
 
-// получить список листов /task-lists or /task-lists/{id}
-// получить список тасков /tasks or /tasks/{id}
+function getProjectList(projectID) {
+  return new Promise(function (resolve, reject) {
+    req('get', process.env.API_URL + `/projects/${projectID}/task-lists`).then(function (res) {
+      // let filteredMsg = ''
+
+      let filteredArr = []
+      // console.log(res)
+
+      res.forEach((item, index) => {
+        filteredArr.push(item)
+      })
+      
+      resolve(filteredArr)
+
+    }).catch(function (err) {
+      reject(err)
+    })
+  })
+}
+
+
 
 function getTasks(projectID) {
   return new Promise(function (resolve, reject) {
@@ -138,8 +157,9 @@ function timeRecord(projectID, taskID) {
 // module.exports = req
 module.exports = {
   getIntent,
-  getProjects,
   checkToken,
+  getProjects,
+  getProjectList,
   getTasks,
   timeRecord
 } 
