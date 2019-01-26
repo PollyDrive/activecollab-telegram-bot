@@ -17,23 +17,6 @@ server();
 
 /********[INIT TOKEN COLLAB]*******/
 apiCollab.checkToken()
-
-// menu.setCommand('start')
-  
-/********[INIT PROJECTS]*******/
-
-// bot.command('projects', (ctx) => {
-//   // projectsController()
-// })
-
-/********[INIT TASKS]*******/
-
-
-/********[INIT TIME RECORDS]*******/
-
-/********[INIT SETTINGS]*******/
-
-/********[RUNTIME]*******/
     
 const bot = new Telegraf(process.env.BOT_TOKEN)
 
@@ -76,6 +59,93 @@ function convertTime(UNIX_timestamp) {
   return time;
 }
 
+
+
+let selectedItem = {}
+let selectedArr = []
+let currentAction = ''
+
+function predicateFn(callbackData) {
+  let isPredicate = false;
+  selectedArr.forEach((item) => {
+    if (item.name === callbackData) isPredicate = true, selectedItem = item
+  })
+  return isPredicate
+}
+
+
+
+
+
+bot.hears(predicateFn, (ctx) => {
+
+  if (currentAction === 'projects') {
+
+    const filteredSelectedItem = selectedArr.filter(function (item) {
+      return item.name === selectedItem.name;
+    })
+
+    let filteredListArr = []
+
+    apiCollab.getProjectList(filteredSelectedItem[0].id).then(function (listArr) {
+
+      if (listArr.length) {
+        listArr.forEach((item) => {
+          const list = {
+            list_id: item.id,
+            list_url_path: item.url_path,
+            name: item.name,
+            list_project_id: item.project_id,
+            list_open_tasks: item.open_tasks,
+            list_completed_tasks: item.completed_tasks
+          }
+          filteredListArr.push(list)
+
+        })
+      }
+
+      let keyboardListArray = [];
+      filteredListArr.forEach((item) => {
+        keyboardListArray.push(item.name);
+      });
+
+      ctx.reply('Выбери список', Markup
+        .keyboard([
+          [keyboardListArray[0], keyboardListArray[1], keyboardListArray[2]],
+          [keyboardListArray[3], keyboardListArray[4]],
+          [keyboardListArray[5], keyboardListArray[6]]
+        ])
+        .oneTime(true)
+        .resize(true)
+        .extra()
+      )
+
+      selectedArr = filteredListArr
+      currentAction = 'project-lists'
+
+    });
+
+
+
+  } else if (currentAction === 'project-lists') {
+
+    const filteredSelectedItem = selectedArr.filter(function (item) {
+      return item.name === selectedItem.name;
+    })
+
+    ctx.reply(filteredSelectedItem)
+    // в это же время получаем таски всег проекта, т.к. нет возможности выбирать таски по спискам
+    collabTasks.getCollabTasks(filteredSelectedItem[0].id)
+
+
+  }
+
+})
+
+
+
+
+
 bot.command('projects', (ctx) => {
   ctx.reply(`Ищу твои проекты `)
   apiCollab.getProjects().then(function (filteredMsg) {
@@ -92,108 +162,8 @@ bot.command('projects', (ctx) => {
       .extra()
     )
 
-    let selectedItem = {}
-
-    function predicateFn(callbackData) {
-      let isPredicate = false;
-      filteredMsg.forEach((item) => {
-        if (item.name === callbackData) isPredicate = true, selectedItem = item
-      })
-      return isPredicate
-    }
-    
-
-    // function getAnswer(callbackData) {
-
-    //   return new Promise(function (resolve, reject) {
-    //     resolve(callbackData)
-    //     if (err) return reject(err);
-    //   })
-    // }
-
-    // const callbackAnswer = getAnswer().then((callbackData) => {
-    //   filteredMsg.forEach((item) => {
-    //     if (item.name === callbackData) {
-    //       isPredicate = true,
-    //       selectedItem = item
-    //     }
-    //     return isPredicate
-    //   })
-    // }).catch((e) => {
-    //   console.log(e)
-    // })
-
-
-    bot.hears(predicateFn, (ctx) => {
-      const filteredSelectedItem = filteredMsg.filter(function (item) {
-        return item.name === selectedItem.name;
-      })
-
-
-      
-      let filteredListArr = []
-
-      apiCollab.getProjectList(filteredSelectedItem[0].id).then(function (listArr) {
-        
-        if (listArr.length) {
-          listArr.forEach((item) => {
-            const list = {
-              list_id: item.id,
-              list_url_path: item.url_path,
-              list_name: item.name,
-              list_project_id: item.project_id,
-              list_open_tasks: item.open_tasks,
-              list_completed_tasks: item.completed_tasks
-            }
-            filteredListArr.push(list)
-            
-          })
-        }
-
-        let keyboardListArray = [];
-        filteredListArr.forEach((item) => {
-          keyboardListArray.push(item.list_name);
-        });
-
-        ctx.reply('Выбери список', Markup
-          .keyboard([
-              [keyboardListArray[0], keyboardListArray[1], keyboardListArray[2]],
-              [keyboardListArray[3], keyboardListArray[4]],
-              [keyboardListArray[5], keyboardListArray[6]]
-          ])
-          .oneTime(true)
-          .resize(true)
-          .extra()
-        )
-
-        let selectedList = {}
-
-        function predicateListFn(callbackData) {
-          let isListPredicate = false;
-          filteredListArr.forEach((item) => {
-
-            if (item.list_name === callbackData) isListPredicate = true, selectedList = item
-          })
-          return isListPredicate;
-        }
-        
-        bot.hears(predicateListFn, (ctx) => {
-          const filteredSelectedList = filteredListArr.filter(function (item) {
-            console.log(selectedList)
-            return item.list_name === selectedList.list_name;
-          })
-          
-          ctx.reply(filteredSelectedList)
-          // в это же время получаем таски всег проекта, т.к. нет возможности выбирать таски по спискам
-          collabTasks.getCollabTasks(filteredSelectedItem[0].id)
-
-        })
-      
-        }).catch((e) => {
-          console.log(e)
-        })
-
-    });
+    selectedArr = filteredMsg
+    currentAction = 'projects'
  
   }).catch(function (e) {
     console.log(e)
