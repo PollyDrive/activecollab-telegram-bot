@@ -2,6 +2,7 @@
 require('dotenv').config()
 const server = require('./server.js')
 const apiCollab = require('./handlers/apiCollab.js')
+const collabTasks = require('./handlers/collabTasks.js')
 const apiTeamweek = require('./handlers/apiTeamweek.js')
 const Telegraf = require('telegraf')
 const Markup = require('telegraf/markup')
@@ -26,6 +27,7 @@ apiCollab.checkToken()
 // })
 
 /********[INIT TASKS]*******/
+
 
 /********[INIT TIME RECORDS]*******/
 
@@ -86,7 +88,7 @@ bot.command('projects', (ctx) => {
     ctx.reply('Твои проекты', Markup
       .keyboard(keyboardArray)
       .oneTime()
-      .resize()
+      .resize(true)
       .extra()
     )
 
@@ -97,20 +99,44 @@ bot.command('projects', (ctx) => {
       filteredMsg.forEach((item) => {
         if (item.name === callbackData) isPredicate = true, selectedItem = item
       })
-      return isPredicate;
+      return isPredicate
     }
     
+
+    // function getAnswer(callbackData) {
+
+    //   return new Promise(function (resolve, reject) {
+    //     resolve(callbackData)
+    //     if (err) return reject(err);
+    //   })
+    // }
+
+    // const callbackAnswer = getAnswer().then((callbackData) => {
+    //   filteredMsg.forEach((item) => {
+    //     if (item.name === callbackData) {
+    //       isPredicate = true,
+    //       selectedItem = item
+    //     }
+    //     return isPredicate
+    //   })
+    // }).catch((e) => {
+    //   console.log(e)
+    // })
+
+
     bot.hears(predicateFn, (ctx) => {
       const filteredSelectedItem = filteredMsg.filter(function (item) {
         return item.name === selectedItem.name;
       })
 
+
+      
       let filteredListArr = []
 
       apiCollab.getProjectList(filteredSelectedItem[0].id).then(function (listArr) {
         
         if (listArr.length) {
-          listArr.forEach((item, index) => {
+          listArr.forEach((item) => {
             const list = {
               list_id: item.id,
               list_url_path: item.url_path,
@@ -120,139 +146,53 @@ bot.command('projects', (ctx) => {
               list_completed_tasks: item.completed_tasks
             }
             filteredListArr.push(list)
-            // console.log(filteredListArr)
             
-            })
-          }
-          let keyboardListArray = [];
+          })
+        }
+
+        let keyboardListArray = [];
+        filteredListArr.forEach((item) => {
+          keyboardListArray.push(item.list_name);
+        });
+
+        ctx.reply('Выбери список', Markup
+          .keyboard([
+              [keyboardListArray[0], keyboardListArray[1], keyboardListArray[2]],
+              [keyboardListArray[3], keyboardListArray[4]],
+              [keyboardListArray[5], keyboardListArray[6]]
+          ])
+          .oneTime(true)
+          .resize(true)
+          .extra()
+        )
+
+        let selectedList = {}
+
+        function predicateListFn(callbackData) {
+          let isListPredicate = false;
           filteredListArr.forEach((item) => {
-            keyboardListArray.push(item.list_name);
-          });
 
-          ctx.reply('Все списки в проекте', Markup
-            .keyboard(
-              ['🔍' + keyboardListArray[0], '😎' + keyboardListArray[1], '😎' + keyboardListArray[2], 
-              '☸' + keyboardListArray[3], '📞' + keyboardListArray[4], '😎' + keyboardListArray[5], 
-              '📢' + keyboardListArray[6],] 
-            )
-            .oneTime()
-            .resize()
-            .extra()
-          )
-
-          let selectedList = {}
-
-          function predicateListFn(callbackData) {
-            let isPredicate = false;
-            filteredListArr.forEach((item) => {
-              if (item.name === callbackData) isPredicate = true, selectedList = item
-            })
-            return isPredicate;
-          }
-          
-          bot.hears(predicateListFn, (ctx) => {
-            console.log(predicateListFn())
-            const filteredSelectedList = filteredListArr.filter(function (item) {
-              return item.name === selectedList.name;
-            })
-            console.log(filteredSelectedList)
-
+            if (item.list_name === callbackData) isListPredicate = true, selectedList = item
           })
-          // это все очень грустно
+          return isListPredicate;
+        }
         
-          }).catch((e) => {
-            console.log(e)
+        bot.hears(predicateListFn, (ctx) => {
+          const filteredSelectedList = filteredListArr.filter(function (item) {
+            console.log(selectedList)
+            return item.list_name === selectedList.list_name;
           })
-
-      // apiCollab.getTasks(filteredSelectedItem[0].id).then(function (taskArr) {
-        
-      //   if (taskArr.length) {
-      //     // console.log(taskArr)
-      //     let filteredTaskArr = []
-      //     taskArr.forEach((item, index) => {
-      //       console.log(item);
-      //       const task = {
-      //         id: item.id,
-      //         name: item.name,
-      //         body: item.body,
-      //         task_list_id: item.task_list_id,
-      //         url: item.url_path,
-      //         label: item.label,
-      //         job_type_id: item.job_type_id,
-      //         assignee_id: item.assignee_id,
-      //         estimate: item.estimate / 60,
-      //         start_on: item.start_on,
-      //         due_on: item.due_on,
-      //         is_completed: item.is_completed,
-      //       }
-      //       filteredTaskArr.push(task)
-            
-      //     })
-
-      //     const buttonsObj = {
-      //       reply_markup: JSON.stringify({
-      //         inline_keyboard: filteredTaskArr.map((item) => ([{
-      //           text: item.name,
-      //           callback_data: item.url,
-      //         }])),
-      //       }),
-      //     };
           
-      //     let answerObj = {}
-      //     ctx.reply('project tasks:', buttonsObj).then(() => {
-      //       answerObj = JSON.parse(buttonsObj.reply_markup).inline_keyboard[0][0];
-      //       // console.log(answerObj)
+          ctx.reply(filteredSelectedList)
+          // в это же время получаем таски всег проекта, т.к. нет возможности выбирать таски по спискам
+          collabTasks.getCollabTasks(filteredSelectedItem[0].id)
 
-      //       bot.action(answerObj.callback_data, (ctx) => {
+        })
+      
+        }).catch((e) => {
+          console.log(e)
+        })
 
-      //         const actionsMenu = Telegraf.Extra
-      //           .markdown()
-      //           .markup((m) => m.inlineKeyboard([
-      //             m.callbackButton('Открыть таск', 'open_task'),
-      //             m.callbackButton('Трекнуть время', 'track_time')
-      //           ]));
-              
-      //         ctx.reply('че хочешь?', actionsMenu).then(() => {
-      //           const selectedTask = filteredTaskArr.filter(function (item) {
-      //             return item.url === answerObj.callback_data
-      //           })
-
-      //           bot.action('open_task', (ctx) => {
-      //             // console.log(selectedTask.url)
-      //             const thisItem = {
-      //               name: selectedTask[0].name,
-      //               body: selectedTask[0].body ? selectedTask[0].body : 'описания нет',
-      //               estimate: selectedTask[0].estimate ? 'запланировано ' + selectedTask[0].estimate + ' ч.' : 'ожидаемого времени нет',
-      //               due_on: selectedTask[0].due_on ? 'надо выполнить до ' + convertTime(selectedTask[0].due_on) : 'делай сколько хочешь'
-      //             }
-
-      //             ctx.reply(`
-      //               ${thisItem.name}, \n ${thisItem.body}, \n ${thisItem.estimate}, ${thisItem.due_on}
-      //             `)
-      //           });
-      //           bot.action('track_time', (ctx) => {
-      //             ctx.reply('сколько часов трекнуть?')
-      //             // apiCollab.timeRecord(1, 1).then(function (res) {
-      //             //   // console.log(res)
-      //                 // bot.action(item.name, (ctx) => ctx.answerCallbackQuery('Трекнул!'))
-      //             // }).catch(function (e) {
-      //             //   console.log(e)
-      //             // })
-      //           });
-
-      //         }).catch((e) => {
-      //           console.log(e)
-      //         })
-      //       })
-      //     }).catch(function (e) {
-      //       console.log(e)
-      //     })
-
-
-      //   } else {
-      //     ctx.reply('Тасков нет, иди домой')
-      //   }
-      // }).catch(function (e) {})
     });
  
   }).catch(function (e) {
