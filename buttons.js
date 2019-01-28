@@ -1,13 +1,18 @@
 class Button {
-  constructor(replyText, allAnswersArr, nextAction) {
+  constructor(bot = null, ctx = null, replyText, allAnswersArr) {
     this.replyText = replyText;  // optional
-    this.allAnswersArr = allAnswersArr
-    this.nextAction = nextAction
+    this.allAnswersArr = allAnswersArr;
+    this.ctx = ctx;
+    this.bot = bot;
+
   }
   
+  init() { 
+    this.createInlineButtons()
+  }
+//- выпилить инит и вместо создания экземпляров вызывать один метод с разными данными
   createInlineButtons() {
-    console.log(this)
-    return buttonsObj = {
+    const buttonsObj = {
       reply_markup: JSON.stringify({
         inline_keyboard: this.allAnswersArr.map((item) => ([{
           text: item.name,
@@ -15,16 +20,21 @@ class Button {
         }])),
       }),
     }
-  }
 
-  reply() {
-    let createdButtonObj = this.createInlineButtons()
-    console.log(createdButtonObj)
     let answerObj = {}
-    ctx.reply(this.replyText, buttonsObj).then(() => {
+
+    if (this.ctx === null || this.bot === null) {
+      console.log('бота или контекста нет')
+      return;
+    }
+
+    this.ctx.reply(this.replyText, buttonsObj).then(() => {
       answerObj = JSON.parse(buttonsObj.reply_markup).inline_keyboard[0][0];
-      bot.action(answerObj.callback_data, (ctx) => {
-        console.log('callback_data: ' + answerObj.callback_data)
+
+      // console.log(answerObj)
+
+      this.bot.action(answerObj.callback_data, (ctx) => {
+        console.log(answerObj)
   
         if (this.nextAction) {
           // nextAction()
@@ -37,8 +47,8 @@ class Button {
         }
       })
     }).catch(function (e) {
-        console.log(e)
-      })
+      console.log(e)
+    })
   }
       
 }

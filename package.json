@@ -23,5 +23,8 @@
     "simple-oauth2": "^2.2.1",
     "telegraf": "^3.26.0",
     "telegraf-inline-menu": "^3.2.2"
+  },
+  "devDependencies": {
+    "eslint": "^5.12.1"
   }
 }

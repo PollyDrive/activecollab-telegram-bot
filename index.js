@@ -22,7 +22,6 @@ let selectedItem = {}
 let selectedArr = []
 let currentAction = ''
 
-
 const bot = new Telegraf(process.env.BOT_TOKEN)
 
 bot.command('user', (ctx) => { 
@@ -145,8 +144,9 @@ bot.hears(predicateFn, (ctx) => {
         // console.log(taskByListArr)
 
         if (taskByListArr.length) {
-          const taskButtons = new Button('project tasks:', taskByListArr, true)
-          taskButtons.createInlineButtons()
+          const taskButtons = new Button(bot, ctx, 'project tasks:', taskByListArr)
+          taskButtons.init()
+          taskButtons.resultCallback() //- 
         }
 
         // const buttonsObj = {
